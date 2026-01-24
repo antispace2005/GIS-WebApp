@@ -1,0 +1,299 @@
+/* Ensure the body takes up the full screen */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#gis-app-root {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* This is the key: it must fill its parent */
+.full-screen-map {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: skyblue; /* Helpful to see if the div exists */
+}
+/* Widget Positioning */
+.floating-top-right {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.floating-bottom-right {
+  position: absolute;
+  bottom: 40px; /* Stay above the OpenLayers attribution if needed */
+  right: 20px;
+}
+
+.floating-tools-panel {
+  position: absolute;
+  top: 260px;
+  right: 20px;
+}
+
+/* Widget Styling */
+.gis-widget {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  pointer-events: auto; /* Important! */
+  font-family: sans-serif;
+  min-width: 150px;
+}
+
+.basemap-btn {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  padding: 8px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.basemap-btn:hover {
+  background: #f0f0f0;
+}
+/* --- Widget Container --- */
+.gis-widget {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 15px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* --- Layer Switcher Specifics --- */
+.layer-switcher {
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.layer-switcher h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #555;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 5px;
+}
+
+.layer-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.2s;
+}
+
+.layer-row:last-child {
+  border-bottom: none;
+}
+
+.layer-row:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.layer-row input[type="checkbox"] {
+  cursor: pointer;
+  margin-right: 10px;
+  width: 16px;
+  height: 16px;
+  accent-color: #0078d4;
+}
+
+.layer-row span {
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+}
+
+/* --- Tools Panel Specifics --- */
+.tools-panel {
+  min-width: 180px;
+}
+
+.tools-panel h4 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #555;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 5px;
+}
+
+.clear-drawn-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.clear-drawn-btn:hover {
+  background: #ee5a52;
+}
+
+.clear-drawn-btn:active {
+  background: #c92a2a;
+}
+
+.analyze-btn {
+  width: 100%;
+  padding: 8px 12px;
+  background: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.analyze-btn:hover {
+  background: #0060a6;
+}
+
+.analyze-btn:active {
+  background: #004578;
+}
+.floating-top-right {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1000; /* Above OpenLayers map */
+}
+/* --- Custom Sidebar --- */
+#my-custom-sidebar {
+  position: absolute;
+  left: 20px;
+  top: 20px;
+  z-index: 1000;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#my-custom-sidebar .layer-switcher {
+  padding: 15px;
+}
+
+/* --- Analysis Box Specifics --- */
+.analysis-box {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  min-width: 220px;
+  max-width: 280px;
+  background: rgba(255, 255, 255, 0.97);
+  z-index: 2000;
+}
+
+.analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #0078d4;
+}
+
+.analysis-header h4 {
+  margin: 0;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #0078d4;
+  font-weight: 600;
+}
+
+.analysis-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.analysis-close-btn:hover {
+  color: #333;
+}
+
+.analysis-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  background: rgba(0, 120, 212, 0.05);
+  border-radius: 4px;
+  border-left: 3px solid #0078d4;
+}
+
+.result-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.result-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0078d4;
+}
+
+.analysis-clear-btn {
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: 8px;
+  background: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.analysis-clear-btn:hover {
+  background: #0060a6;
+}
+
+.analysis-clear-btn:active {
+  background: #004578;
+}
