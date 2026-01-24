@@ -278,22 +278,48 @@ export const SpatialAnalysis = {
   },
 
   /**
-   * Sum the population values of features
-   * @param {Feature[]} features - Array of point features
-   * @param {string} populationAttr - Property name containing population value
-   * @returns {number} - Total population sum
+   * Sum values of a single attribute across features
+   * @param {Feature[]} features - Array of features
+   * @param {string} attribute - Property name to aggregate
+   * @returns {number} - Total sum
    */
-  aggregatePopulation: (features, populationAttr = "population") => {
+  aggregateAttribute: (features, attribute) => {
     if (!features || features.length === 0) return 0;
+    if (!attribute) return 0;
 
     try {
       return features.reduce((sum, feature) => {
-        const val = parseFloat(feature.properties?.[populationAttr]) || 0;
+        const val = parseFloat(feature.properties?.[attribute]) || 0;
         return sum + val;
       }, 0);
     } catch (e) {
       console.error("Aggregation failed:", e);
       return 0;
+    }
+  },
+
+  /**
+   * Sum values of multiple attributes across features
+   * @param {Feature[]} features - Array of features
+   * @param {string[]} attributes - Array of property names to aggregate
+   * @returns {Object} - Object with attribute names as keys and sums as values
+   */
+  aggregateAttributes: (features, attributes) => {
+    if (!features || features.length === 0) return {};
+    if (!attributes || attributes.length === 0) return {};
+
+    try {
+      const result = {};
+      attributes.forEach((attr) => {
+        result[attr] = features.reduce((sum, feature) => {
+          const val = parseFloat(feature.properties?.[attr]) || 0;
+          return sum + val;
+        }, 0);
+      });
+      return result;
+    } catch (e) {
+      console.error("Multi-attribute aggregation failed:", e);
+      return {};
     }
   },
 };

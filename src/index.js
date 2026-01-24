@@ -7,6 +7,8 @@ import { Fetchers } from "./api/fetchers.js";
 import { LayerSwitcher } from "./ui/widgets/layer-switch.js";
 import { ToolsPanel } from "./ui/widgets/tools-panel.js";
 import { AnalysisBox } from "./ui/widgets/analysis-box.js";
+import { NavTools } from "./ui/widgets/nav-tools.js";
+import { MeasureTools } from "./ui/widgets/measure-tools.js";
 import { DrawingTool } from "./map/interactions.js";
 import { SpatialAnalysis } from "./spatial/analysis.js";
 import govsLocal from "./data/gov_with_pop.geojson";
@@ -64,6 +66,14 @@ async function start() {
     layerUI.addLayer("Governorates", govesLayer);
     layerUI.mount();
 
+    // Nav toolbar test mount (Phase 4.5)
+    const navTools = new NavTools(map);
+    navTools.mount();
+
+    // Measure toolbar (Phase 4.6)
+    const measureTools = new MeasureTools(map);
+    measureTools.mount();
+
     // 3. Initialize Tools Panel (Phase 4)
     const toolsPanel = new ToolsPanel();
     const drawingTool = new DrawingTool(map);
@@ -99,7 +109,7 @@ async function start() {
       console.log("Points inside:", pointsInside.length);
 
       // Aggregate population
-      const totalPopulation = SpatialAnalysis.aggregatePopulation(
+      const totalPopulation = SpatialAnalysis.aggregateAttribute(
         pointsInside,
         "population",
       );

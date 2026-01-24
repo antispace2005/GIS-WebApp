@@ -30,6 +30,13 @@ body {
   right: 20px;
 }
 
+.floating-top-left {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+}
+
 .floating-bottom-right {
   position: absolute;
   bottom: 40px; /* Stay above the OpenLayers attribution if needed */
@@ -202,6 +209,139 @@ body {
   padding: 15px;
 }
 
+/* --- Navigation Tools --- */
+.nav-tools-slot {
+  position: absolute;
+  top: 110px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.nav-tools {
+  min-width: 150px;
+}
+
+.nav-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.nav-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f7f7f7;
+  cursor: pointer;
+  font-size: 14px;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.nav-btn:hover {
+  background: #eef6ff;
+  border-color: #0078d4;
+}
+
+.nav-btn.active {
+  background: #0078d4;
+  color: white;
+  border-color: #005a9e;
+}
+
+.nav-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #555;
+}
+
+/* --- Measure Tools --- */
+.measure-tools-slot {
+  position: absolute;
+  top: 200px;
+  left: 20px;
+  z-index: 1000;
+}
+
+.measure-tools {
+  min-width: 180px;
+}
+
+.measure-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.measure-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.measure-btn {
+  flex: 1 1 30%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f7f7f7;
+  cursor: pointer;
+  font-size: 13px;
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+
+.measure-btn:hover {
+  background: #eef6ff;
+  border-color: #0078d4;
+}
+
+.measure-btn.active {
+  background: #0078d4;
+  color: white;
+  border-color: #005a9e;
+}
+
+.measure-btn.clear {
+  flex: 1 1 100%;
+  background: #ffe8e8;
+  border-color: #f5b5b5;
+}
+
+.measure-btn.clear:hover {
+  background: #ffd6d6;
+  border-color: #eb9e9e;
+}
+
+.measure-readouts {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #333;
+}
+
+.readout .label {
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.readout .value {
+  color: #005a9e;
+}
+
 /* --- Analysis Box Specifics --- */
 .analysis-box {
   position: absolute;
@@ -296,4 +436,10 @@ body {
 
 .analysis-clear-btn:active {
   background: #004578;
+}
+
+/* OpenLayers drag zoom box */
+.ol-dragzoom {
+  border: 2px dashed #0078d4;
+  background-color: rgba(0, 120, 212, 0.15);
 }
