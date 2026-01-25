@@ -42,18 +42,35 @@ async function start() {
     {
       key: "layers",
       label: "Layers",
-      svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>`
-    }
+      svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>`,
+    },
+    {
+      key: "measure",
+      label: "Measure",
+      svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="7" rx="2"/><path d="M6 7v7M10 7v7M14 7v7M18 7v7"/></svg>`,
+    },
   ];
-  const sidebarPrimary = new SidebarPrimary({ icons: sidebarIcons, position: 'right' });
+  const sidebarPrimary = new SidebarPrimary({
+    icons: sidebarIcons,
+    position: "right",
+  });
   sidebarPrimary.mount();
 
   // Prepare iconEl for later use
-  const iconEl = sidebarPrimary.element.querySelector('.sidebar-icon[data-key="layers"]');
+  const iconEl = sidebarPrimary.element.querySelector(
+    '.sidebar-icon[data-key="layers"]',
+  );
   // Mount the dashboard sidebar
   const dashboard = new Dashboard();
   dashboard.mount();
   try {
+    // Prepare iconEls for drawers
+    const iconLayers = sidebarPrimary.element.querySelector(
+      '.sidebar-icon[data-key="layers"]',
+    );
+    const iconMeasure = sidebarPrimary.element.querySelector(
+      '.sidebar-icon[data-key="measure"]',
+    );
     const data = await Fetchers.fetchWFS(
       "/geoserver/wfs",
       "OSM:Egypt_Population",
@@ -77,23 +94,29 @@ async function start() {
     const layerUI = new LayerSwitcher(map);
     layerUI.addLayer("Egypt Population (WFS)", dynamicManager.currentLayer);
     layerUI.addLayer("Governorates", govesLayer.instance);
-    // Use Drawer utility for Layers flyout (after layers are ready)
     new Drawer({
-      id: 'sidebar-flyout-layers',
-      header: 'Layers',
+      id: "sidebar-flyout-layers",
+      header: "Layers",
       content: layerUI.element,
-      triggerEl: iconEl,
-      position: 'right',
-      sticky: true
+      triggerEl: iconLayers,
+      position: "right",
+      sticky: true,
+    });
+
+    // Measure Tools in Drawer
+    const measureTools = new MeasureTools(map);
+    new Drawer({
+      id: "sidebar-flyout-measure",
+      header: "Measure Tools",
+      content: measureTools.element,
+      triggerEl: iconMeasure,
+      position: "right",
+      sticky: true,
     });
 
     // Nav toolbar without 3D button (no v3dEngine)
     // const navTools = new NavTools(map);
     // navTools.mount();
-
-    // Measure toolbar (Phase 4.6)
-    const measureTools = new MeasureTools(map);
-    measureTools.mount();
 
     // 3. Initialize Tools Panel (Phase 4)
     const toolsPanel = new ToolsPanel();

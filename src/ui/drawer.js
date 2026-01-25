@@ -2,7 +2,10 @@
 // Generic flyout drawer utility for reuse
 
 export class Drawer {
+  static _instances = [];
   /**
+  // Registry to track all Drawer instances
+  Drawer._instances = [];
    * @param {Object} options
    * @param {string} options.id - Unique id for the drawer DOM element
    * @param {string} options.header - Drawer header text or HTML
@@ -28,6 +31,9 @@ export class Drawer {
     this.stickyOpen = false;
     this.flyoutTimer = null;
     this.drawer = this._createDrawer();
+    // Ensure static property exists for environments that don't support class fields
+    if (!Drawer._instances) Drawer._instances = [];
+    Drawer._instances.push(this);
     this._attachEvents();
   }
 
@@ -65,7 +71,20 @@ export class Drawer {
     const iconEl = this.triggerEl;
     const self = this;
     function openFlyout() {
+      // Prevent hover open if any sticky drawer is open
+      const anyStickyOpen = Drawer._instances.some(
+        (inst) => inst.sticky && inst.stickyOpen,
+      );
+      if (!self.stickyOpen && anyStickyOpen) return;
       clearTimeout(self.flyoutTimer);
+      // Close all other sticky drawers
+      Drawer._instances.forEach((inst) => {
+        if (inst !== self && inst.sticky && inst.stickyOpen) {
+          inst.stickyOpen = false;
+          inst.drawer.classList.remove("open");
+          if (inst.triggerEl) inst.triggerEl.classList.remove("active");
+        }
+      });
       drawer.classList.add("open");
       iconEl.classList.add("active");
     }

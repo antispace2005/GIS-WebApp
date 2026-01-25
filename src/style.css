@@ -1,3 +1,25 @@
+/* Drawer widget style for MeasureTools */
+.drawer-widget {
+  background: none;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  min-width: 0;
+}
+.drawer-widget-title {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #23234a;
+}
+.drawer-widget-icon {
+  font-size: 1.2em;
+  display: inline-flex;
+  align-items: center;
+}
 /* --- LayerSwitcher Up/Down Buttons --- */
 .layer-switcher .layer-row button {
   background: #f3f6fa;

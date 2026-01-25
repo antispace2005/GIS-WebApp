@@ -38,9 +38,8 @@ export class MeasureTools {
 
   render() {
     const container = document.createElement("div");
-    container.className = "gis-widget measure-tools";
+    container.className = "measure-tools drawer-widget";
     container.innerHTML = `
-      <div class="measure-title">Measure</div>
       <div class="measure-buttons">
         <button class="measure-btn" data-mode="line">Distance</button>
         <button class="measure-btn" data-mode="area">Area</button>
