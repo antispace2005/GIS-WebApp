@@ -1,0 +1,30 @@
+/* Cesium 3D viewer styles */
+.cesium-viewer {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+.cesium-viewer-cesiumWidgetContainer {
+  width: 100%;
+  height: 100%;
+}
+
+.cesium-widget {
+  width: 100%;
+  height: 100%;
+}
+
+.cesium-widget canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Make sure Cesium container is visible */
+#map .ol-viewport {
+  position: relative;
+}

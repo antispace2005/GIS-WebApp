@@ -26,7 +26,7 @@ export const Fetchers = {
       }
     }
 
-    const url = new URL(baseUrl);
+    const url = new URL(baseUrl, window.location.origin);
     const params = {
       service: "WFS",
       version: "1.1.0",
@@ -40,7 +40,14 @@ export const Fetchers = {
       url.searchParams.append(key, params[key]),
     );
 
+    console.log("Fetching WFS from:", url.toString());
+
     const response = await fetch(url);
+
+    // Check response status
+    if (!response.ok) {
+      throw new Error(`WFS request failed with status ${response.status}`);
+    }
 
     // Check if the content type is actually JSON
     const contentType = response.headers.get("content-type");

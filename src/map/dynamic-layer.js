@@ -1,5 +1,8 @@
 import { DataLayerFactory } from "./generators.js";
-import { Group as LayerGroup } from "ol/layer"; // Import Group
+import { containsExtent, getIntersection } from "ol/extent";
+import GeoJSON from "ol/format/GeoJSON";
+
+const geojsonFormat = new GeoJSON();
 
 export class DynamicHeatmap {
   constructor(map, rawData, weightAttr = "population", maxWeight = null) {
@@ -7,54 +10,71 @@ export class DynamicHeatmap {
     this.rawData = rawData;
     this.weightAttr = weightAttr;
 
-    // ... (Your existing auto-detect logic for maxWeight) ...
-    // Note: Keep your existing constructor logic for maxWeight here
+    // Auto-detect maxWeight if not provided
     if (!maxWeight) {
-      /* ... keep your existing code ... */
+      let detectedMax = 0;
+      if (rawData.features) {
+        rawData.features.forEach((f) => {
+          const value = parseFloat(f.properties?.[weightAttr]) || 0;
+          if (value > detectedMax) detectedMax = value;
+        });
+      }
+      // Add 10% buffer to avoid saturation
+      this.maxWeight = detectedMax * 1.1;
     } else {
       this.maxWeight = maxWeight;
     }
 
-    // 1. STABILITY FIX: Create a Layer Group
-    // This Group stays on the map forever. We just change what's inside it.
-    this.layerGroup = new LayerGroup({
-      layers: [],
-      properties: { title: "Dynamic Heatmap" }, // Helpful for debugging
+    // Create initial layer
+    const zoom = this.map.getView().getZoom();
+    this.currentLayer = DataLayerFactory.createBasicHeatmap(
+      rawData,
+      weightAttr,
+      this.maxWeight,
+      this.calculateBlur(zoom),
+      this.calculateRadius(zoom),
+      0.7,
+      false,
+    );
+    this.map.addLayer(this.currentLayer);
+
+    // Initial style update
+    this.updateHeatmapStyle();
+
+    // Update on zoom changes for dynamic radius/blur (without recreating layer)
+    this.map.getView().on("change:resolution", () => {
+      this.updateHeatmapStyle();
     });
-    this.map.addLayer(this.layerGroup);
 
-    // Initial render
-    this.refresh();
-
-    // Event Listeners
-    this.map.getView().on("change:resolution", () => this.updateHeatmapStyle());
-    this.map.getView().on("moveend", () => this.refresh());
+    // Refresh on pan/zoom end to show only visible features
+    this.map.getView().on("moveend", () => {
+      this.refresh();
+    });
   }
 
-  // ... (Keep calculateRadius, calculateBlur, updateHeatmapStyle exactly as they are) ...
+  // Calculate zoom-dependent radius and blur
   calculateRadius(zoom) {
+    // Low zoom (5-7): small radius, high zoom (15+): large radius
     return Math.max(5, Math.min(50, 5 + (zoom - 5) * 3));
   }
+
   calculateBlur(zoom) {
     return Math.max(10, Math.min(40, 10 + (zoom - 5) * 2));
   }
 
   updateHeatmapStyle() {
-    // Get the actual layer from inside the group
-    const layers = this.layerGroup.getLayers();
-    if (layers.getLength() > 0) {
-      const layer = layers.item(0);
-      const zoom = this.map.getView().getZoom();
-      layer.setBlur(this.calculateBlur(zoom));
-      layer.setRadius(this.calculateRadius(zoom));
-    }
+    if (!this.currentLayer) return;
+
+    const zoom = this.map.getView().getZoom();
+    this.currentLayer.setBlur(this.calculateBlur(zoom));
+    this.currentLayer.setRadius(this.calculateRadius(zoom));
   }
 
   refresh() {
     const zoom = this.map.getView().getZoom();
-
-    // ... (Keep your existing viewExtent / buffer logic) ...
     const viewExtent = this.map.getView().calculateExtent(this.map.getSize());
+
+    // Add buffer to extent (20% on each side) to include nearby points for smooth rendering
     const buffer = [
       (viewExtent[2] - viewExtent[0]) * 0.2,
       (viewExtent[3] - viewExtent[1]) * 0.2,
@@ -66,19 +86,27 @@ export class DynamicHeatmap {
       viewExtent[3] + buffer[1],
     ];
 
-    // ... (Keep your existing filtering logic) ...
+    // Filter features to only those in view
     const visibleFeatures = this.rawData.features.filter((feature) => {
-      // ... paste your existing filter logic here ...
+      const coords = feature.geometry.coordinates;
+      // Handle both Point and Polygon geometries
       if (feature.geometry.type === "Point") {
-        const [x, y] = feature.geometry.coordinates;
+        const [x, y] = coords;
         return (
           x >= bufferedExtent[0] &&
           x <= bufferedExtent[2] &&
           y >= bufferedExtent[1] &&
           y <= bufferedExtent[3]
         );
+      } else if (
+        feature.geometry.type === "Polygon" ||
+        feature.geometry.type === "MultiPolygon"
+      ) {
+        // For polygons, check if any part intersects with view
+        // Simple bbox check - you could use turf.js for more accuracy
+        return true; // For now, include all polygons
       }
-      return true;
+      return false;
     });
 
     const filteredData = {
@@ -86,30 +114,17 @@ export class DynamicHeatmap {
       features: visibleFeatures,
     };
 
-    // 2. STABILITY FIX: Swap layer INSIDE the Group
-    // Clear the group
-    this.layerGroup.getLayers().clear();
+    // Update the source instead of removing/adding layer
+    const source = this.currentLayer.getSource();
+    const newFeatures = geojsonFormat.readFeatures(filteredData, {
+      featureProjection: "EPSG:3857",
+    });
 
-    // Create new layer
-    const newLayer = DataLayerFactory.createBasicHeatmap(
-      filteredData,
-      this.weightAttr,
-      this.maxWeight,
-      this.calculateBlur(zoom),
-      this.calculateRadius(zoom),
-      0.7,
-    );
+    // Clear existing features and add new ones
+    source.clear();
+    source.addFeatures(newFeatures);
 
-    // Add to Group (instead of Map)
-    this.layerGroup.getLayers().push(newLayer);
-  }
-
-  // 3. UI INTERFACE: Methods for the Layer Switcher
-  getLayer() {
-    return this.layerGroup;
-  }
-
-  setVisible(visible) {
-    this.layerGroup.setVisible(visible);
+    // Update style after changing features
+    this.updateHeatmapStyle();
   }
 }

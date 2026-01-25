@@ -1,4 +1,6 @@
 import "./style.css";
+import "cesium/Build/Cesium/Widgets/widgets.css";
+import "./cesium-styles.css";
 import { initLayout } from "./ui/layout.js";
 import { initMap, registerBaseMap } from "./map/core.js";
 import { BaseMapFactory, DataLayerFactory } from "./map/generators.js";
@@ -11,7 +13,6 @@ import { NavTools } from "./ui/widgets/nav-tools.js";
 import { MeasureTools } from "./ui/widgets/measure-tools.js";
 import { DrawingTool } from "./map/interactions.js";
 import { SpatialAnalysis } from "./spatial/analysis.js";
-import govsLocal from "./data/gov_with_pop.geojson";
 
 // Expose AnalysisBox for quick console testing
 if (typeof window !== "undefined") {
@@ -33,28 +34,19 @@ registerBaseMap(map, "OSM", osm, true);
 async function start() {
   try {
     const data = await Fetchers.fetchWFS(
-      "http://localhost:8080/geoserver/wfs",
+      "/geoserver/wfs",
       "OSM:Egypt_Population",
     );
 
-    // Fetch the governorate GeoJSON
-    const govesResponse = await fetch(govsLocal);
+    // Fetch the governorate GeoJSON from public folder
+    const govesResponse = await fetch("/data/gov_with_pop.geojson");
     const govesData = await govesResponse.json();
 
-    // 1. Initialize Logic (Phase 2)
-    const dynamicManager = DataLayerFactory.createBasicHeatmap(
-      data,
-      "population",
-      null,
-      15,
-      10,
-      1,
-      false,
-    );
+    // 1. Initialize Logic (Phase 2) - Use Dynamic Heatmap
+    const dynamicManager = new DynamicHeatmap(map, data, "population");
 
     // Create a vector layer for governorates
     const govesLayer = DataLayerFactory.createVector(govesData);
-    map.addLayer(dynamicManager);
     map.addLayer(govesLayer.instance);
 
     map.getView().setCenter([3473147.67, 3115456.46]);
@@ -62,11 +54,12 @@ async function start() {
 
     // 2. Initialize UI (Phase 3)
     const layerUI = new LayerSwitcher(map);
-    layerUI.addLayer("Egypt Population (WFS)", dynamicManager);
+    layerUI.addLayer("Egypt Population (WFS)", dynamicManager.currentLayer);
+
     layerUI.addLayer("Governorates", govesLayer);
     layerUI.mount();
 
-    // Nav toolbar test mount (Phase 4.5)
+    // Nav toolbar without 3D button (no v3dEngine)
     const navTools = new NavTools(map);
     navTools.mount();
 
