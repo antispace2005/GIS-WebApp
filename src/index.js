@@ -12,6 +12,11 @@ import { AnalysisBox } from "./ui/widgets/analysis-box.js";
 import { NavTools } from "./ui/widgets/nav-tools.js";
 import { MeasureTools } from "./ui/widgets/measure-tools.js";
 import { DrawingTool } from "./map/interactions.js";
+import { SidebarPrimary } from "./ui/sidebar-primary.js";
+import { Drawer } from "./ui/drawer.js";
+import "./ui/sidebar-primary.css";
+import { Dashboard } from "./ui/dashboard.js";
+import "./ui/dashboard.css";
 import { SpatialAnalysis } from "./spatial/analysis.js";
 
 // Expose AnalysisBox for quick console testing
@@ -32,6 +37,22 @@ registerBaseMap(map, "OSM", osm, true);
 // ... imports ...
 
 async function start() {
+  // Mount the primary sidebar (iconic vertical bar)
+  const sidebarIcons = [
+    {
+      key: "layers",
+      label: "Layers",
+      svg: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>`
+    }
+  ];
+  const sidebarPrimary = new SidebarPrimary({ icons: sidebarIcons, position: 'right' });
+  sidebarPrimary.mount();
+
+  // Prepare iconEl for later use
+  const iconEl = sidebarPrimary.element.querySelector('.sidebar-icon[data-key="layers"]');
+  // Mount the dashboard sidebar
+  const dashboard = new Dashboard();
+  dashboard.mount();
   try {
     const data = await Fetchers.fetchWFS(
       "/geoserver/wfs",
@@ -55,13 +76,20 @@ async function start() {
     // 2. Initialize UI (Phase 3)
     const layerUI = new LayerSwitcher(map);
     layerUI.addLayer("Egypt Population (WFS)", dynamicManager.currentLayer);
-
-    layerUI.addLayer("Governorates", govesLayer);
-    layerUI.mount();
+    layerUI.addLayer("Governorates", govesLayer.instance);
+    // Use Drawer utility for Layers flyout (after layers are ready)
+    new Drawer({
+      id: 'sidebar-flyout-layers',
+      header: 'Layers',
+      content: layerUI.element,
+      triggerEl: iconEl,
+      position: 'right',
+      sticky: true
+    });
 
     // Nav toolbar without 3D button (no v3dEngine)
-    const navTools = new NavTools(map);
-    navTools.mount();
+    // const navTools = new NavTools(map);
+    // navTools.mount();
 
     // Measure toolbar (Phase 4.6)
     const measureTools = new MeasureTools(map);

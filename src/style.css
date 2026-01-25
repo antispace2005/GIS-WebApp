@@ -1,3 +1,34 @@
+/* --- LayerSwitcher Up/Down Buttons --- */
+.layer-switcher .layer-row button {
+  background: #f3f6fa;
+  border: 1px solid #c3d0e8;
+  color: #2563eb;
+  border-radius: 4px;
+  font-size: 15px;
+  width: 28px;
+  height: 28px;
+  margin: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.18s,
+    border-color 0.18s,
+    color 0.18s;
+  outline: none;
+  box-shadow: none;
+}
+.layer-switcher .layer-row button:hover {
+  background: #e0eaff;
+  border-color: #2563eb;
+  color: #174ea6;
+}
+.layer-switcher .layer-row button:active {
+  background: #c7dbfa;
+  border-color: #174ea6;
+  color: #174ea6;
+}
 /* Ensure the body takes up the full screen */
 html,
 body {
@@ -89,6 +120,7 @@ body {
 .layer-switcher {
   min-width: 200px;
   max-width: 300px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .layer-switcher h4 {
@@ -101,11 +133,14 @@ body {
 }
 
 .layer-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 32px 1fr 32px 32px;
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid #f0f0f0;
   transition: background 0.2s;
+  gap: 0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .layer-row:last-child {

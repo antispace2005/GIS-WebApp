@@ -1,55 +1,121 @@
 export class LayerSwitcher {
-  constructor(map) {
+  /**
+   * @param {ol.Map} map - The OpenLayers map instance
+   * @param {Object} [options] - Optional config
+   * @param {('left'|'right')} [options.buttonPosition='right'] - Where to place up/down buttons relative to label
+   */
+  constructor(map, options = {}) {
     this.map = map;
+    this.layers = [];
     this.element = this.render();
+    this.buttonPosition = options.buttonPosition || "right";
+  }
+
+  update() {
+    // Re-render the layer list UI after reordering
+    const list = this.element.querySelector(".layer-list");
+    if (!list) return;
+    list.innerHTML = "";
+    this.layers.forEach(({ name, layer }, idx) => {
+      // Grid: [checkbox] [label] [up] [down]
+      const row = document.createElement("div");
+      row.className = "layer-row";
+
+      // Checkbox
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = layer.getVisible ? layer.getVisible() : true;
+      checkbox.onchange = (e) => {
+        if (layer.setVisible) {
+          layer.setVisible(e.target.checked);
+        } else if (layer.toggle) {
+          layer.toggle(e.target.checked);
+        }
+      };
+
+      // Label
+      const label = document.createElement("span");
+      label.innerText = name;
+      label.onclick = () => checkbox.click();
+
+      // Up button (always rendered, but disabled/hidden if first)
+      const upBtn = document.createElement("button");
+      upBtn.textContent = "▲";
+      upBtn.title = "Move up";
+      if (idx === 0) {
+        upBtn.disabled = true;
+        upBtn.style.visibility = "hidden";
+      } else {
+        upBtn.onclick = (e) => {
+          e.stopPropagation();
+          this.moveLayer(name, -1);
+        };
+      }
+
+      // Down button (always rendered, but disabled/hidden if last)
+      const downBtn = document.createElement("button");
+      downBtn.textContent = "▼";
+      downBtn.title = "Move down";
+      if (idx === this.layers.length - 1) {
+        downBtn.disabled = true;
+        downBtn.style.visibility = "hidden";
+      } else {
+        downBtn.onclick = (e) => {
+          e.stopPropagation();
+          this.moveLayer(name, 1);
+        };
+      }
+
+      // Place in grid: [checkbox] [label] [up] [down]
+      row.appendChild(checkbox);
+      row.appendChild(label);
+      row.appendChild(upBtn);
+      row.appendChild(downBtn);
+      list.appendChild(row);
+    });
   }
 
   render() {
     // 1. Create the widget content
     const container = document.createElement("div");
-    // Apply styles from style.css
-    container.className = "gis-widget layer-switcher";
+    container.className = "layer-switcher";
 
     container.innerHTML = `
-      <h4>Data Layers</h4>
       <div class="layer-list"></div>
     `;
     return container;
   }
 
   addLayer(name, controller) {
-    const list = this.element.querySelector(".layer-list");
-    const row = document.createElement("div");
-    row.className = "layer-row";
+    // Add to internal layers array if not already present
+    if (!this.layers.some((l) => l.name === name)) {
+      this.layers.push({ name, layer: controller });
+      this.update();
+    }
+  }
 
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.checked = true;
-
-    // Toggle logic - supports multiple method names
-    checkbox.onchange = (e) => {
-      if (controller.setVisible) {
-        // DynamicHeatmap method
-        controller.setVisible(e.target.checked);
-      } else if (controller.toggle) {
-        // createVector wrapper method
-        controller.toggle(e.target.checked);
-      } else if (
-        controller.setVisible !== undefined &&
-        typeof controller.setVisible === "function"
-      ) {
-        // OpenLayers layer method
-        controller.setVisible(e.target.checked);
-      }
-    };
-
-    const label = document.createElement("span");
-    label.innerText = name;
-    label.onclick = () => checkbox.click(); // Clicking text toggles box
-
-    row.appendChild(checkbox);
-    row.appendChild(label);
-    list.appendChild(row);
+  moveLayer(name, direction) {
+    const idx = this.layers.findIndex((l) => l.name === name);
+    if (idx === -1) return;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= this.layers.length) return;
+    // Swap in array
+    const temp = this.layers[newIdx];
+    this.layers[newIdx] = this.layers[idx];
+    this.layers[idx] = temp;
+    // Update map layer order (top = last in array)
+    if (this.map && this.map.getLayers) {
+      const olLayers = this.map.getLayers().getArray();
+      // Remove and re-insert in new order
+      this.layers.forEach(({ layer }) => {
+        if (olLayers.includes(layer)) {
+          this.map.removeLayer(layer);
+          this.map.addLayer(layer);
+        }
+      });
+    }
+    // Re-render UI
+    this.update();
   }
 
   /**
