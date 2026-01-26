@@ -148,8 +148,8 @@ export class MeasureTools {
 
     const styles = [
       new Style({
-        stroke: new Stroke({ color: "#ff9900", width: 2 }),
-        fill: new Fill({ color: "rgba(255, 153, 0, 0.15)" }),
+        stroke: new Stroke({ color: "#0e21a0", width: 2 }),
+        fill: new Fill({ color: "rgba(14, 33, 160, 0.12)" }),
       }),
     ];
 
@@ -174,9 +174,9 @@ export class MeasureTools {
               text: measurement,
               font: "bold 14px sans-serif",
               fill: new Fill({ color: "#fff" }),
-              stroke: new Stroke({ color: "#ff9900", width: 3 }),
+              stroke: new Stroke({ color: "#0e21a0", width: 3 }),
               offsetY: -10,
-              backgroundFill: new Fill({ color: "rgba(255, 153, 0, 0.8)" }),
+              backgroundFill: new Fill({ color: "rgba(14, 33, 160, 0.85)" }),
               padding: [3, 6, 3, 6],
             }),
           }),
@@ -238,6 +238,19 @@ export class MeasureTools {
     this.deactivateDraw();
     this.activeMode = null;
     this.updateActiveButtons();
+  }
+
+  /**
+   * Publicly deactivate the measure tool (used by ToolsPanel to turn off tools)
+   */
+  deactivate() {
+    try {
+      this.deactivateDraw();
+      this.activeMode = null;
+      this.updateActiveButtons();
+    } catch (e) {
+      // ignore
+    }
   }
 
   mount(target) {

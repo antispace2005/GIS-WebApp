@@ -107,19 +107,75 @@ export const SpatialAnalysis = {
     }
 
     try {
-      // Convert OL features to GeoJSON
+      // Convert features to GeoJSON (already handles OL features)
       const geoFeatures = polygonFeatures.map((f) =>
         SpatialAnalysis._toGeoJSON(f),
       );
 
-      // Use dissolve to merge all polygons together
-      const collection = turf.featureCollection(geoFeatures);
-      const merged = turf.dissolve(collection);
+      console.log("unionPolygons - input features", {
+        count: geoFeatures.length,
+        details: geoFeatures.map((f, i) => ({
+          index: i,
+          type: f.type,
+          geomType: f.geometry?.type,
+          hasCoords: !!f.geometry?.coordinates,
+          coordLength: f.geometry?.coordinates?.length,
+        })),
+      });
+
+      // Flatten all MultiPolygons to Polygons for dissolve compatibility
+      const flatFeatures = [];
+      geoFeatures.forEach((feature, idx) => {
+        if (feature.geometry?.type === "MultiPolygon") {
+          const flattened = turf.flatten(turf.featureCollection([feature]));
+          flatFeatures.push(...flattened.features);
+        } else if (feature.geometry?.type === "Polygon") {
+          flatFeatures.push(feature);
+        } else {
+          console.warn(
+            "Skipping unsupported geometry type:",
+            feature.geometry?.type,
+            feature,
+          );
+        }
+      });
+
+      console.log("unionPolygons - after flatten", {
+        count: flatFeatures.length,
+        details: flatFeatures.map((f, i) => ({
+          index: i,
+          type: f.type,
+          geomType: f.geometry?.type,
+          hasCoords: !!f.geometry?.coordinates,
+        })),
+      });
+
+      if (flatFeatures.length === 0) {
+        console.error("No valid polygon features to union");
+        return null;
+      }
+
+      const fc = turf.featureCollection(flatFeatures);
+      console.log("unionPolygons - featureCollection", {
+        featureCount: fc.features.length,
+      });
+
+      const merged = turf.dissolve(fc);
+
+      console.log("unionPolygons - result", {
+        type: merged.type,
+        resultGeomType: merged.features
+          ? merged.features[0]?.geometry?.type
+          : merged.geometry?.type,
+      });
 
       // Keep whatever turf returns (Feature or FeatureCollection)
       return merged;
     } catch (e) {
-      console.error("Union failed:", e, polygonFeatures);
+      console.error("Union failed:", e, {
+        message: e.message,
+        featureCount: polygonFeatures.length,
+      });
       return null;
     }
   },
@@ -146,6 +202,12 @@ export const SpatialAnalysis = {
       if (geomType === "Polygon") {
         coords = coords.map((ring) =>
           ring.map((coord) => SpatialAnalysis._mercatorToWGS84(coord)),
+        );
+      } else if (geomType === "MultiPolygon") {
+        coords = coords.map((polygon) =>
+          polygon.map((ring) =>
+            ring.map((coord) => SpatialAnalysis._mercatorToWGS84(coord)),
+          ),
         );
       } else if (geomType === "Point") {
         coords = SpatialAnalysis._mercatorToWGS84(coords);
@@ -177,6 +239,35 @@ export const SpatialAnalysis = {
       (Math.atan(Math.exp((y / 20037508.34) * Math.PI)) * 2 - Math.PI / 2) *
       (180 / Math.PI);
     return [lon, lat];
+  },
+
+  /**
+   * Convert an entire geometry from Web Mercator to WGS84
+   * @param {Feature} feature - Feature with geometry to convert
+   * @returns {Feature} - Feature with WGS84 coordinates
+   */
+  _convertGeometryToWGS84: (feature) => {
+    const convertCoord = SpatialAnalysis._mercatorToWGS84;
+    const geom = feature.geometry;
+    if (!geom) return feature;
+
+    const convertCoords = (coords) => {
+      if (!Array.isArray(coords)) return coords;
+      if (typeof coords[0] === "number") {
+        return convertCoord(coords);
+      }
+      return coords.map(convertCoords);
+    };
+
+    const newGeom = {
+      ...geom,
+      coordinates: convertCoords(geom.coordinates),
+    };
+
+    return {
+      ...feature,
+      geometry: newGeom,
+    };
   },
 
   /**
@@ -274,12 +365,46 @@ export const SpatialAnalysis = {
           ? polygon.features
           : [polygon];
 
+      // Check if polygon coordinates need conversion
+      const polyFirstCoord = firstCoord(polyList[0]?.geometry);
+      const polyNeedsConversion = polyFirstCoord
+        ? Math.abs(polyFirstCoord[0]) > 180 || Math.abs(polyFirstCoord[1]) > 90
+        : false;
+
+      console.log("filterPointsInShape - polygon check", {
+        polyNeedsConversion,
+        firstPolyCoord: polyFirstCoord,
+      });
+
       let collectedHits = [];
       polyList.forEach((poly) => {
         if (!poly?.geometry) return;
-        const res = turf.pointsWithinPolygon(fc, poly);
-        if (res?.features?.length) {
-          collectedHits = collectedHits.concat(res.features);
+        try {
+          // Convert polygon if needed
+          let workingPoly = poly;
+          if (polyNeedsConversion) {
+            workingPoly = SpatialAnalysis._convertGeometryToWGS84(poly);
+          }
+
+          // Handle MultiPolygon by flattening it
+          if (workingPoly.geometry.type === "MultiPolygon") {
+            const flattened = turf.flatten(
+              turf.featureCollection([workingPoly]),
+            );
+            flattened.features.forEach((flatPoly) => {
+              const res = turf.pointsWithinPolygon(fc, flatPoly);
+              if (res?.features?.length) {
+                collectedHits = collectedHits.concat(res.features);
+              }
+            });
+          } else {
+            const res = turf.pointsWithinPolygon(fc, workingPoly);
+            if (res?.features?.length) {
+              collectedHits = collectedHits.concat(res.features);
+            }
+          }
+        } catch (e) {
+          console.warn("pointsWithinPolygon failed for poly:", e);
         }
       });
 
@@ -337,6 +462,117 @@ export const SpatialAnalysis = {
     } catch (e) {
       console.error("Multi-attribute aggregation failed:", e);
       return {};
+    }
+  },
+
+  /**
+   * Extract labels and numeric values from a GeoJSON FeatureCollection.
+   * @param {GeoJSON} geojson - FeatureCollection
+   * @param {string} labelProp - property name to use for labels (default: 'name')
+   * @param {string} valueProp - property name to use for numeric values (default: 'population_sum')
+   * @returns {{labels: string[], values: number[]}}
+   */
+  extractLabelsAndValues: (
+    geojson,
+    labelProp = "name",
+    valueProp = "population_sum",
+  ) => {
+    const labels = [];
+    const values = [];
+    if (!geojson || !Array.isArray(geojson.features)) return { labels, values };
+    try {
+      geojson.features.forEach((f) => {
+        const props = f.properties || {};
+        const lab =
+          props[labelProp] !== undefined && props[labelProp] !== null
+            ? String(props[labelProp])
+            : "";
+        const raw = props[valueProp];
+        const num = Number(raw);
+        labels.push(lab);
+        values.push(Number.isFinite(num) ? num : 0);
+      });
+    } catch (e) {
+      console.warn("extractLabelsAndValues failed:", e);
+    }
+    return { labels, values };
+  },
+
+  /**
+   * Find features in a polygon FeatureCollection that contain the given point.
+   * Returns an array of GeoJSON Features (converted to WGS84) that contain the point.
+   * @param {GeoJSON} geojson - FeatureCollection of polygons
+   * @param {number[]|Feature} point - [x,y] coordinate (map projection) or GeoJSON Point Feature
+   * @returns {Array<Feature>}
+   */
+  findFeaturesContainingPoint: (geojson, point) => {
+    if (!geojson || !Array.isArray(geojson.features) || !point) return [];
+    try {
+      let ptCoords = null;
+      if (Array.isArray(point) && point.length >= 2) {
+        ptCoords = point;
+      } else if (point.type === "Feature" && point.geometry?.type === "Point") {
+        ptCoords = point.geometry.coordinates;
+      }
+      if (!ptCoords) return [];
+
+      // Detect if point coords are in WebMercator (>180) and convert to WGS84 when needed
+      const needsConvert =
+        Math.abs(ptCoords[0]) > 180 || Math.abs(ptCoords[1]) > 90;
+      const pointWgs = needsConvert
+        ? SpatialAnalysis._mercatorToWGS84(ptCoords)
+        : ptCoords;
+
+      const hits = [];
+      for (let i = 0; i < geojson.features.length; i++) {
+        const f = geojson.features[i];
+        if (!f || !f.geometry) continue;
+
+        // Convert feature geometry to WGS84 if it appears to be WebMercator
+        const firstCoord = (() => {
+          const geom = f.geometry;
+          if (!geom) return null;
+          const t = geom.type;
+          const c = geom.coordinates;
+          if (!c) return null;
+          if (t === "Point") return c;
+          if (t === "MultiPoint" || t === "LineString") return c[0];
+          if (t === "MultiLineString" || t === "Polygon") return c[0]?.[0];
+          if (t === "MultiPolygon") return c[0]?.[0]?.[0];
+          return null;
+        })();
+
+        const featureNeedsConv =
+          firstCoord &&
+          (Math.abs(firstCoord[0]) > 180 || Math.abs(firstCoord[1]) > 90);
+        let featW = f;
+        if (featureNeedsConv) {
+          const conv = (coords) => {
+            if (typeof coords[0] === "number")
+              return SpatialAnalysis._mercatorToWGS84(coords);
+            return coords.map(conv);
+          };
+          featW = {
+            type: "Feature",
+            properties: f.properties || {},
+            geometry: {
+              type: f.geometry.type,
+              coordinates: conv(f.geometry.coordinates),
+            },
+          };
+        }
+
+        try {
+          const pt = turf.point(pointWgs);
+          if (turf.booleanPointInPolygon(pt, featW)) hits.push(featW);
+        } catch (e) {
+          // ignore
+        }
+      }
+      return hits;
+    } catch (e) {
+      console.error("findFeaturesContainingPoint failed:", e);
+      return [];
     }
   },
 };

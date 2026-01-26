@@ -1,0 +1,512 @@
+document.addEventListener("DOMContentLoaded", () => {
+  let drawAreaInteraction = null;
+  let measureInteraction = null;
+  let selectGovInteraction = null;
+  let hoveredFeature = null;
+  let handlePointerMove = null;
+
+  function deactivateAllInteractions() {
+    if (drawAreaInteraction) {
+      map.removeInteraction(drawAreaInteraction);
+      drawAreaInteraction = null;
+    }
+    if (measureInteraction) {
+      map.removeInteraction(measureInteraction);
+      measureInteraction = null;
+    }
+    if (selectGovInteraction) {
+      map.un("click", handleGovClick);
+      if (handlePointerMove) {
+        map.un("pointermove", handlePointerMove);
+        handlePointerMove = null;
+      }
+      // remove tooltip if present
+      const existingTip = document.getElementById("govHoverTooltip");
+      if (existingTip && existingTip.parentNode)
+        existingTip.parentNode.removeChild(existingTip);
+      // clear any hovered highlight
+      if (hoveredFeature) {
+        hoveredFeature.setStyle(null);
+        hoveredFeature = null;
+      }
+      selectGovInteraction = null;
+      document.getElementById("selectGovBtn").style.filter = "";
+    }
+  }
+  // ===================== BASE LAYERS =====================
+  const osmLayer = new ol.layer.Tile({
+    source: new ol.source.OSM(),
+    visible: true,
+  });
+  const geoserverLayer = new ol.layer.Tile({
+    source: new ol.source.TileWMS({
+      url: "http://localhost:8090/geoserver/OSM/wms",
+      params: { LAYERS: "OSM:OSM", FORMAT: "image/png" },
+      serverType: "geoserver",
+    }),
+    visible: false,
+  });
+
+  // ===================== VIEW & MAP =====================
+  // Egypt bounding box in EPSG:4326 [minLon, minLat, maxLon, maxLat]
+  const egyptBBox4326 = [24.7, 22.0, 36.9, 31.7];
+  const egyptExtent = ol.proj.transformExtent(
+    egyptBBox4326,
+    "EPSG:4326",
+    "EPSG:3857",
+  );
+  const view = new ol.View({
+    projection: "EPSG:3857",
+    center: ol.proj.fromLonLat([31.2357, 27.0444]), // Cairo
+    zoom: 6.5,
+    minZoom: 6,
+    extent: egyptExtent,
+    constrainOnlyCenter: true,
+  });
+
+  const map = new ol.Map({
+    target: "map",
+    layers: [osmLayer, geoserverLayer],
+    view: view,
+  });
+
+  // ===================== CONTROLS =====================
+  map.addControl(new ol.control.Zoom());
+  map.addControl(new ol.control.ScaleLine());
+
+  // ===================== LAYER SWITCH =====================
+  const layerSelect = document.getElementById("layerSelect");
+
+  layerSelect.addEventListener("change", (e) => {
+    const value = e.target.value;
+
+    // OpenLayers base layers
+    osmLayer.setVisible(value === "osm");
+    geoserverLayer.setVisible(value === "geoserver");
+
+    // Cesium toggle
+    if (value === "cesium") {
+      console.log(window.CesiumController);
+      window.CesiumController.show();
+    } else {
+      window.CesiumController.hide();
+    }
+  });
+
+  // ===================== DRAWN AREA LAYER =====================
+  const drawnAreaSource = new ol.source.Vector();
+  window.drawnAreaSource = drawnAreaSource;
+  const drawnAreaLayer = new ol.layer.Vector({
+    source: drawnAreaSource,
+    style: new ol.style.Style({
+      stroke: new ol.style.Stroke({ color: "orange", width: 2 }),
+      fill: new ol.style.Fill({ color: "rgba(255,165,0,0.2)" }),
+    }),
+  });
+  map.addLayer(drawnAreaLayer);
+
+  //let drawInteraction = null;
+  document.getElementById("drawAreaBtn").onclick = () => {
+    deactivateAllInteractions(); // 🔴 stop measure first
+
+    drawAreaInteraction = new ol.interaction.Draw({
+      source: drawnAreaSource,
+      type: "Polygon",
+    });
+
+    map.addInteraction(drawAreaInteraction);
+  };
+
+  document.getElementById("selectGovBtn").onclick = () => {
+    if (selectGovInteraction) {
+      // Turn off
+      deactivateAllInteractions();
+    } else {
+      // Turn on
+      deactivateAllInteractions();
+      selectGovInteraction = true;
+      document.getElementById("selectGovBtn").style.filter = "brightness(0.85)";
+      map.on("click", handleGovClick);
+
+      // pointermove handler for hover highlighting + tooltip
+      handlePointerMove = function (evt) {
+        if (!selectGovInteraction) return;
+        const hit = map.forEachFeatureAtPixel(evt.pixel, (f) => f, {
+          layerFilter: (layer) => layer === govLayer,
+        });
+        // manage highlight
+        if (hit !== hoveredFeature) {
+          if (hoveredFeature) {
+            hoveredFeature.setStyle(null);
+            hoveredFeature = null;
+          }
+          if (hit) {
+            hoveredFeature = hit;
+            const hlStyle = new ol.style.Style({
+              stroke: new ol.style.Stroke({ color: "#ffff00", width: 3 }),
+              fill: new ol.style.Fill({ color: "rgba(255,255,0,0.2)" }),
+            });
+            hit.setStyle(hlStyle);
+          }
+        }
+
+        // tooltip handling
+        let tip = document.getElementById("govHoverTooltip");
+        if (!tip) {
+          tip = document.createElement("div");
+          tip.id = "govHoverTooltip";
+          tip.style.position = "fixed";
+          tip.style.pointerEvents = "none";
+          tip.style.padding = "4px 8px";
+          tip.style.background = "rgba(0,0,0,0.8)";
+          tip.style.color = "white";
+          tip.style.borderRadius = "3px";
+          tip.style.fontSize = "12px";
+          tip.style.zIndex = 10000;
+          document.body.appendChild(tip);
+        }
+
+        if (hit) {
+          tip.style.display = "block";
+          tip.textContent = hit.get("name") || "";
+          const ev = evt.originalEvent || {};
+          const clientX = ev.clientX || (evt.pixel && evt.pixel[0]) || 0;
+          const clientY = ev.clientY || (evt.pixel && evt.pixel[1]) || 0;
+          // offset tooltip a bit so it doesn't overlap cursor
+          tip.style.left = clientX + 12 + "px";
+          tip.style.top = clientY + 12 + "px";
+        } else if (tip) {
+          tip.style.display = "none";
+        }
+      };
+      map.on("pointermove", handlePointerMove);
+    }
+  };
+
+  function handleGovClick(event) {
+    if (!selectGovInteraction) return; // Exit if interaction not active
+
+    const feature = map.forEachFeatureAtPixel(
+      event.pixel,
+      (feature) => {
+        return feature;
+      },
+      { layerFilter: (layer) => layer === govLayer },
+    );
+
+    if (feature) {
+      const clone = feature.clone();
+      clone.setStyle(
+        new ol.style.Style({
+          stroke: new ol.style.Stroke({ color: "orange", width: 2 }),
+          fill: new ol.style.Fill({ color: "rgba(72, 0, 255, 0.34)" }),
+        }),
+      );
+      drawnAreaSource.addFeature(clone);
+    }
+  }
+
+  document.getElementById("clearAreaBtn").onclick = () => {
+    drawnAreaSource.clear();
+    intersectionSource.clear();
+    deactivateAllInteractions(); // 🔴 stop draw
+  };
+
+  // ===================== GOV LAYER =====================
+  const govSource = new ol.source.Vector();
+  fetch("data/gov_with_pop.geojson")
+    .then((resp) => resp.json())
+    .then((data) => {
+      const features = new ol.format.GeoJSON().readFeatures(data, {
+        dataProjection: "EPSG:3857",
+        featureProjection: "EPSG:3857",
+      });
+      govSource.addFeatures(features);
+    });
+
+  const govLayer = new ol.layer.Vector({
+    source: govSource,
+    style: (feature) =>
+      new ol.style.Style({
+        fill: new ol.style.Fill({
+          color: "rgba(255,125,0,0.5)", // semi-transparent orange fill
+        }),
+        stroke: new ol.style.Stroke({
+          color: "rgba(255,255,255,0.5)",
+          width: 4,
+        }),
+        text: new ol.style.Text({
+          text: feature.get("name"), // display attribute 'name'
+          font: "bold 12px Arial", // font size and style
+          fill: new ol.style.Fill({ color: "rgba(0,70,0,1)" }),
+        }),
+      }),
+  });
+  map.addLayer(govLayer);
+
+  /// ===================== POPULATION HEATMAP =====================
+  const popSource = new ol.source.Vector();
+
+  fetch("data/OSM_Egypt_Population_Points3km.GeoJSON")
+    .then((resp) => resp.json())
+    .then((data) => {
+      const features = new ol.format.GeoJSON().readFeatures(data, {
+        dataProjection: "EPSG:3857",
+        featureProjection: "EPSG:3857",
+      });
+      popSource.addFeatures(features);
+    });
+
+  const popLayer = new ol.layer.Heatmap({
+    source: popSource,
+    blur: 15,
+    radius: 10, // will be updated dynamically
+    weight: (f) => f.get("weight") || 0,
+    visible: true,
+    opacity: 0.9,
+  });
+  map.addLayer(popLayer);
+
+  // ===================== DYNAMIC HEATMAP =====================
+  function refreshHeatmap() {
+    const extent = map.getView().calculateExtent(map.getSize());
+
+    // 1️⃣ Normalize weight by max population in view
+    const featuresInView = popSource.getFeaturesInExtent(extent);
+
+    let maxPop = 0;
+    featuresInView.forEach((f) => {
+      const pop = f.get("population") || 0;
+      if (pop > maxPop) maxPop = pop;
+    });
+    maxPop = maxPop / 2;
+    featuresInView.forEach((f) => {
+      const pop = f.get("population") || 0;
+      const w = Math.pow(pop / maxPop, 0.5);
+      f.set("weight", w);
+    });
+
+    // 2️⃣ Update radius based on zoom
+    const zoom = map.getView().getZoom();
+    const newRadius = 0 + Math.pow(zoom, 4) / 300; // smooth scaling
+    popLayer.setBlur(newRadius * 1.5); // optional: blur can scale too
+    popLayer.setRadius(newRadius);
+
+    // 3️⃣ Force redraw
+    popLayer.getSource().changed();
+  }
+
+  // Initial call
+  refreshHeatmap();
+
+  // Listen to zoom changes
+  // map.getView().on('change:resolution', refreshHeatmap);
+
+  // Listen to map rendering (pan/move)
+  map.on("postrender", refreshHeatmap);
+
+  // ===================== INTERSECTION LAYER =====================
+  const intersectionSource = new ol.source.Vector();
+  const intersectionLayer = new ol.layer.Vector({
+    source: intersectionSource,
+    declutter: true,
+  });
+  map.addLayer(intersectionLayer);
+
+  // ===================== INTERSECTION COLORING LOGIC =====================
+
+  // map.js - Inside the updateIntersectionColors function
+  // map.js
+
+  function updateIntersectionColors() {
+    const data = window.intersectdata;
+    if (!data || !data.populationByRegion) return;
+
+    const features = intersectionSource.getFeatures();
+    const popMap = data.populationByRegion;
+
+    // 1. Sort the names based on your population data to find the Ranks
+    const sortedNames = Object.keys(popMap).sort(
+      (a, b) => popMap[b] - popMap[a],
+    );
+
+    // 2. Generate colors dynamically based on number of regions
+    const colors = window.generateColorGradient
+      ? window.generateColorGradient(sortedNames.length)
+      : window.regionColors || [];
+
+    // 3. Apply styles based on the specific name tagged to the feature
+    features.forEach((feature) => {
+      const featName = feature.get("name");
+
+      if (featName && popMap[featName] !== undefined) {
+        const population = popMap[featName];
+        const rank = sortedNames.indexOf(featName) + 1;
+        const color = colors[(rank - 1) % colors.length] || "gray";
+
+        feature.setStyle(
+          new ol.style.Style({
+            fill: new ol.style.Fill({ color: color }),
+            stroke: new ol.style.Stroke({ color: "#333", width: 2 }),
+            text: new ol.style.Text({
+              text: ` (${rank}) ${featName}\nPop: ${population.toLocaleString()}`,
+              font: "bold 13px sans-serif",
+              fill: new ol.style.Fill({ color: "#fff" }),
+              stroke: new ol.style.Stroke({ color: "#000", width: 3 }),
+              textAlign: "center",
+              overflow: true,
+            }),
+          }),
+        );
+      }
+    });
+  }
+
+  intersectionSource.on("addfeature", () => {
+    // Optional: automatically restyle when features are added
+    // Use a small timeout to ensure all features from a batch are loaded
+    clearTimeout(window.restyleTimer);
+    window.restyleTimer = setTimeout(updateIntersectionColors, 100);
+    deactivateAllInteractions();
+  });
+
+  // ===================== MEASURE TOOLS =====================
+  const measureSource = new ol.source.Vector();
+  const measureLayer = new ol.layer.Vector({ source: measureSource });
+  map.addLayer(measureLayer);
+
+  //let measureInteraction = null;
+
+  function formatLength(line) {
+    const length = ol.sphere.getLength(line);
+    return length > 1000
+      ? (length / 1000).toFixed(2) + " km"
+      : length.toFixed(2) + " m";
+  }
+
+  function formatArea(polygon) {
+    const area = ol.sphere.getArea(polygon);
+    return area > 1000000
+      ? (area / 1000000).toFixed(2) + " km²"
+      : area.toFixed(2) + " m²";
+  }
+
+  measureLayer.setStyle((feature) => {
+    const geom = feature.getGeometry();
+    let output = "";
+    if (geom instanceof ol.geom.LineString) output = formatLength(geom);
+    else if (geom instanceof ol.geom.Polygon) output = formatArea(geom);
+
+    return new ol.style.Style({
+      stroke: new ol.style.Stroke({ color: "green", width: 2 }),
+      fill: new ol.style.Fill({ color: "rgba(0,255,0,0.2)" }),
+      text: new ol.style.Text({
+        font: "14px Calibri,sans-serif",
+        fill: new ol.style.Fill({ color: "#000" }),
+        stroke: new ol.style.Stroke({ color: "#fff", width: 2 }),
+        text: output,
+        overflow: true,
+        placement: "line",
+      }),
+    });
+  });
+
+  function startMeasure(type) {
+    deactivateAllInteractions(); // 🔴 stop draw area first
+
+    measureInteraction = new ol.interaction.Draw({
+      source: measureSource,
+      type,
+    });
+
+    map.addInteraction(measureInteraction);
+  }
+
+  document.getElementById("lengthBtn").onclick = () =>
+    startMeasure("LineString");
+  document.getElementById("areaBtn").onclick = () => startMeasure("Polygon");
+  document.getElementById("clearBtn").onclick = () => {
+    measureSource.clear();
+    deactivateAllInteractions(); // 🔴 VERY IMPORTANT
+  };
+
+  // ===================== GRID =====================
+  const gridSource = new ol.source.Vector();
+  const gridLayer = new ol.layer.Vector({
+    source: gridSource,
+    style: new ol.style.Style({
+      stroke: new ol.style.Stroke({
+        color: "rgba(0,0,0,0.3)",
+        width: 1,
+        lineDash: [4, 4],
+      }),
+    }),
+  });
+  map.addLayer(gridLayer);
+
+  function drawGrid() {
+    gridSource.clear();
+    const extent = map.getView().calculateExtent(map.getSize());
+    const step = 1000000; // 1,000 km grid spacing
+    const [minX, minY, maxX, maxY] = extent;
+
+    for (let x = Math.floor(minX / step) * step; x <= maxX; x += step)
+      gridSource.addFeature(
+        new ol.Feature(
+          new ol.geom.LineString([
+            [x, minY],
+            [x, maxY],
+          ]),
+        ),
+      );
+    for (let y = Math.floor(minY / step) * step; y <= maxY; y += step)
+      gridSource.addFeature(
+        new ol.Feature(
+          new ol.geom.LineString([
+            [minX, y],
+            [maxX, y],
+          ]),
+        ),
+      );
+  }
+
+  map.on("moveend", drawGrid);
+  drawGrid();
+
+  // ===================== ZOOM TOOLBAR =====================
+  const zoomInBtn = document.getElementById("zoomInBtn");
+  const zoomOutBtn = document.getElementById("zoomOutBtn");
+  const zoomWinBtn = document.getElementById("zoomWinBtn");
+  const zoomWindow = new ol.interaction.DragZoom({
+    condition: ol.events.condition.always,
+  });
+
+  zoomInBtn.onclick = () =>
+    view.animate({ zoom: view.getZoom() + 1, duration: 200 });
+  zoomOutBtn.onclick = () =>
+    view.animate({ zoom: view.getZoom() - 1, duration: 200 });
+  zoomWinBtn.onclick = () => {
+    const active = zoomWinBtn.classList.toggle("active");
+    if (active) map.addInteraction(zoomWindow);
+    else map.removeInteraction(zoomWindow);
+  };
+
+  // ===================== EXPORT MAP OBJECTS FOR calculation.js =====================
+  window.MAP_OBJECTS = {
+    map,
+    view,
+    govLayer,
+    drawnAreaSource,
+    popLayer,
+
+    intersectionSource,
+  };
+  // ===================== Layer checkboxes =====================
+  document.getElementById("govChk").addEventListener("change", function () {
+    govLayer.setVisible(this.checked);
+  });
+
+  document.getElementById("popChk").addEventListener("change", function () {
+    popLayer.setVisible(this.checked);
+  });
+});

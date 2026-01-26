@@ -107,3 +107,284 @@
   pointer-events: none;
   z-index: 9999;
 }
+
+/* Draw controls (moved from dashboard.css) */
+.draw-controls {
+  display: block;
+}
+.draw-controls-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px 12px 12px;
+}
+.draw-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Selection controls styling */
+.select-controls {
+  margin-bottom: 12px;
+}
+.select-controls .btn-select-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+  min-height: 36px;
+  width: 100%;
+}
+/* space below select/draw toggles when stacked */
+.select-controls .btn-select-toggle,
+.select-controls .btn-draw-toggle {
+  margin-bottom: 8px;
+}
+.select-controls .btn-select-toggle .icon-select {
+  transition:
+    stroke 150ms ease,
+    fill 150ms ease,
+    transform 150ms ease;
+  stroke: currentColor;
+  fill: none;
+}
+.select-controls .btn-select-toggle:hover {
+  background: #f5f7ff;
+  color: #0e21a0;
+}
+.select-controls .btn-select-toggle.active {
+  background: #0e21a0;
+  color: #fff;
+  border-color: rgba(14, 33, 160, 0.9);
+}
+.select-controls .btn-select-toggle.active .icon-select {
+  stroke: #fff;
+}
+.select-controls .btn-clear-selection {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  margin-top: 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  font-size: 13px;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+.select-controls .btn-clear-selection:hover {
+  background: rgba(255, 230, 230, 0.95);
+  color: #9b1b1b;
+  border-color: rgba(155, 27, 27, 0.12);
+}
+.select-controls .btn-clear-selection:active {
+  transform: translateY(1px);
+}
+
+/* Make draw toggle visually match select toggle when placed in the select block */
+.btn-draw-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+  min-height: 36px;
+  width: 100%;
+}
+.btn-draw-toggle {
+  margin-bottom: 0;
+}
+.btn-draw-toggle .icon-draw {
+  transition:
+    stroke 150ms ease,
+    fill 150ms ease,
+    transform 150ms ease;
+  stroke: currentColor;
+  fill: none;
+}
+.btn-draw-toggle:hover {
+  background: #f5f7ff;
+  color: #0e21a0;
+}
+.btn-draw-toggle.active {
+  background: #0e21a0;
+  color: #fff;
+  border-color: rgba(14, 33, 160, 0.9);
+}
+.btn-draw-toggle.active .icon-draw {
+  stroke: #fff;
+}
+
+/* Measure tools styling: match draw/select toggles when used in drawer */
+.measure-tools {
+  padding: 8px 6px;
+  background: #fff;
+  border-radius: 6px;
+}
+.measure-tools .measure-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.measure-tools .measure-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+  min-height: 36px;
+  width: 100%;
+  font-size: 14px;
+}
+.measure-tools .measure-btn:hover {
+  background: #f5f7ff;
+  color: #0e21a0;
+}
+.measure-tools .measure-btn.active {
+  background: #0e21a0;
+  color: #fff;
+  border-color: rgba(14, 33, 160, 0.9);
+}
+.measure-tools .measure-btn.clear {
+  background: #fff;
+  color: #9b1b1b;
+  border-color: rgba(155, 27, 27, 0.12);
+}
+.measure-tools .measure-btn.clear:hover {
+  background: rgba(255, 230, 230, 0.95);
+  color: #9b1b1b;
+}
+.measure-tools .measure-readouts {
+  margin-top: 8px;
+}
+.measure-tools .measure-readouts .readout {
+  font-size: 13px;
+  color: #444;
+  margin-bottom: 6px;
+}
+
+.draw-controls .btn-draw-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+  min-height: 36px;
+}
+.draw-controls .btn-draw-toggle .icon-draw {
+  transition:
+    stroke 150ms ease,
+    fill 150ms ease,
+    transform 150ms ease;
+  stroke: currentColor;
+  fill: none;
+}
+.draw-controls .btn-draw-toggle:hover {
+  background: #f5f7ff;
+  color: #0e21a0;
+}
+.draw-controls .btn-draw-toggle.active {
+  background: #0e21a0;
+  color: #fff;
+  border-color: rgba(14, 33, 160, 0.9);
+}
+.draw-controls .btn-draw-toggle.active .icon-draw {
+  stroke: #fff;
+}
+.draw-controls .btn-draw-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  min-height: 36px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+.draw-controls .btn-draw-clear:hover {
+  background: #f5f7ff;
+  color: #0e21a0;
+  border-color: rgba(14, 33, 160, 0.12);
+}
+.draw-controls .btn-draw-clear:active {
+  transform: translateY(1px);
+}
+.draw-controls .draw-controls-help {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+}
+
+/* Make analyze button visually consistent with draw controls */
+.analyze-btn,
+.clear-drawn-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  min-height: 36px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #fff;
+  color: #444;
+  cursor: pointer;
+  transition:
+    background 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+.analyze-btn:hover,
+.clear-drawn-btn:hover {
+  background: #f5f7ff;
+  color: #0e21a0;
+  border-color: rgba(14, 33, 160, 0.12);
+}
+.analyze-btn:active,
+.clear-drawn-btn:active {
+  transform: translateY(1px);
+}

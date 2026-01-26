@@ -12,7 +12,7 @@ export default defineConfig({
     host: "localhost",
     proxy: {
       "/geoserver": {
-        target: "http://localhost:8090",
+        target: "http://192.168.1.11:8090/",
         changeOrigin: true,
       },
     },

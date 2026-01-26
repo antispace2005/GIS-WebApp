@@ -6,10 +6,38 @@ import { renderChart } from "./chart.js";
  * @param {Object} govsData - GeoJSON-like object with features array
  */
 export function showSampleCharts(govsData) {
-  // Extract labels and values
+  // Extract labels and values. If the provided geojson contains point features (e.g. 3km points),
+  // group by `region` property and sum `population`. Otherwise fall back to governorate `population_sum`.
   const features = govsData.features || [];
-  const labels = features.map((f) => f.properties.name);
-  const values = features.map((f) => f.properties.population_sum);
+  let labels = [];
+  let values = [];
+  if (
+    features.length &&
+    features[0].geometry &&
+    features[0].geometry.type === "Point"
+  ) {
+    const group = new Map();
+    features.forEach((f) => {
+      const props = f.properties || {};
+      const key =
+        props.region ||
+        props.region_name ||
+        props.h3 ||
+        props.id ||
+        props.fid ||
+        "point";
+      const val = Number(props.population) || 0;
+      group.set(key, (group.get(key) || 0) + val);
+    });
+    const arr = Array.from(group.entries())
+      .map(([k, v]) => ({ k, v }))
+      .sort((a, b) => b.v - a.v);
+    labels = arr.map((d) => d.k);
+    values = arr.map((d) => d.v);
+  } else {
+    labels = features.map((f) => f.properties.name);
+    values = features.map((f) => f.properties.population_sum);
+  }
 
   // Create floating div
   let div = document.getElementById("floating-chart-demo");
@@ -75,29 +103,58 @@ export function showSampleCharts(govsData) {
   });
 
   // Bar chart
+  const barWrap = document.createElement("div");
+  barWrap.style.width = "100%";
+  // Make the bar chart taller when there are many categories to avoid overlap.
+  const perItem = 28; // px per category (adjustable)
+  const maxHeight = 900; // cap height to avoid runaway sizes
+  const computedHeight = Math.min(
+    maxHeight,
+    Math.max(220, labels.length * perItem),
+  );
+  barWrap.style.height = computedHeight + "px";
+  barWrap.style.boxSizing = "border-box";
+  div.appendChild(barWrap);
   const barCanvas = document.createElement("canvas");
-  barCanvas.width = 400;
-  barCanvas.height = 220;
-  div.appendChild(barCanvas);
-  renderChart(barCanvas, {
-    type: "bar",
-    data: { labels, values },
-    colorScheme: "blues",
-    label: "Population by Governorate",
-  });
+  barCanvas.style.width = "100%";
+  barCanvas.style.height = "100%";
+  barCanvas.style.display = "block";
+  barWrap.appendChild(barCanvas);
+  try {
+    renderChart(barCanvas, {
+      type: "bar",
+      data: { labels, values },
+      colorScheme: "blues",
+      label: "Population by Governorate",
+      showAllTicks: true,
+      horizontal: true,
+    });
+  } catch (e) {
+    console.warn("Error rendering bar chart:", e);
+  }
 
   // Pie chart
+  const pieWrap = document.createElement("div");
+  pieWrap.style.width = "100%";
+  pieWrap.style.height = "220px";
+  pieWrap.style.boxSizing = "border-box";
+  div.appendChild(pieWrap);
   const pieCanvas = document.createElement("canvas");
-  pieCanvas.width = 400;
-  pieCanvas.height = 220;
-  div.appendChild(pieCanvas);
-  renderChart(pieCanvas, {
-    type: "pie",
-    data: { labels, values },
-    colorScheme: "custom",
-    label: "Population Share",
-    legend: false,
-  });
+  pieCanvas.style.width = "100%";
+  pieCanvas.style.height = "100%";
+  pieCanvas.style.display = "block";
+  pieWrap.appendChild(pieCanvas);
+  try {
+    renderChart(pieCanvas, {
+      type: "pie",
+      data: { labels, values },
+      colorScheme: "custom",
+      label: "Population Share",
+      legend: false,
+    });
+  } catch (e) {
+    console.warn("Error rendering pie chart:", e);
+  }
 
   // Close button
   const closeBtn = document.createElement("button");
