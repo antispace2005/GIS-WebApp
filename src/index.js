@@ -17,6 +17,7 @@ import { Drawer } from "./ui/drawer.js";
 import "./ui/sidebar-primary.css";
 import { Dashboard } from "./ui/dashboard.js";
 import "./ui/dashboard.css";
+import { showSampleCharts } from "./ui/widgets/chart-sample.js";
 import { SpatialAnalysis } from "./spatial/analysis.js";
 
 // Expose AnalysisBox for quick console testing
@@ -75,10 +76,12 @@ async function start() {
       "/geoserver/wfs",
       "OSM:Egypt_Population",
     );
-
     // Fetch the governorate GeoJSON from public folder
     const govesResponse = await fetch("/data/gov_with_pop.geojson");
     const govesData = await govesResponse.json();
+    console.log(govesData);
+    // Show sample charts in a floating div
+    showSampleCharts(govesData);
 
     // 1. Initialize Logic (Phase 2) - Use Dynamic Heatmap
     const dynamicManager = new DynamicHeatmap(map, data, "population");

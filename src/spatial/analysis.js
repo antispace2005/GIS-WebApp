@@ -1,6 +1,23 @@
 import * as turf from "@turf/turf";
 
 export const SpatialAnalysis = {
+  /**
+   * Extract specific attributes from each feature's properties
+   * @param {GeoJSON} geojson - FeatureCollection
+   * @param {string[]} attributes - Array of property names
+   * @returns {Object[]} - Array of objects with only the requested properties
+   */
+  extractAttributes: (geojson, attributes) => {
+    if (!geojson || !geojson.features || !Array.isArray(attributes)) return [];
+    return geojson.features.map((f) => {
+      const obj = {};
+      attributes.forEach((attr) => {
+        obj[attr] = f.properties ? f.properties[attr] : undefined;
+      });
+      return obj;
+    });
+  },
+
   // 1. Define how big the grid cells are at each zoom level
   getResolutionByZoom: (zoom) => {
     // Returns cell size in Degrees (approx. 0.1 deg = 11km)
