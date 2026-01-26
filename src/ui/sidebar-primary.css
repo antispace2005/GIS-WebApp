@@ -1,3 +1,15 @@
+/* Flyout drawer for left sidebar */
+.sidebar-flyout-drawer.left {
+  left: 56px;
+  right: auto;
+  border-left: none;
+  border-right: 1px solid #e0e0e0;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.1);
+  transform: translateX(-110%);
+}
+.sidebar-flyout-drawer.left.open {
+  transform: translateX(0);
+}
 /* Flyout drawer for right sidebar */
 .sidebar-flyout-drawer {
   position: fixed;

@@ -52,7 +52,7 @@ async function start() {
   ];
   const sidebarPrimary = new SidebarPrimary({
     icons: sidebarIcons,
-    position: "right",
+    position: "left",
   });
   sidebarPrimary.mount();
 
@@ -61,7 +61,7 @@ async function start() {
     '.sidebar-icon[data-key="layers"]',
   );
   // Mount the dashboard sidebar
-  const dashboard = new Dashboard();
+  const dashboard = new Dashboard({ position: "right" });
   dashboard.mount();
   try {
     // Prepare iconEls for drawers
@@ -99,7 +99,7 @@ async function start() {
       header: "Layers",
       content: layerUI.element,
       triggerEl: iconLayers,
-      position: "right",
+      position: "left",
       sticky: true,
     });
 
@@ -110,7 +110,7 @@ async function start() {
       header: "Measure Tools",
       content: measureTools.element,
       triggerEl: iconMeasure,
-      position: "right",
+      position: "left",
       sticky: true,
     });
 
