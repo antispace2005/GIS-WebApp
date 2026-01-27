@@ -274,6 +274,105 @@ body {
   z-index: 1000;
 }
 
+/* Centering modifier for temporary testing */
+.nav-tools-slot.centered {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  right: auto;
+  bottom: auto;
+  z-index: 2000;
+}
+
+/* Bottom-centered pill-style navigation bar */
+.nav-tools-slot.bottom-center {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 2000;
+  pointer-events: auto;
+  /* override earlier top/right values if present */
+  top: auto !important;
+  right: auto !important;
+}
+
+/* Make the widget itself look like a compact pill and hide the title for the compact bar */
+.nav-tools-slot.bottom-center .nav-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  min-width: 0 !important;
+  width: auto;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+}
+
+.nav-tools-slot.bottom-center .nav-title {
+  display: none;
+}
+
+/* Circular action buttons inside the pill */
+.nav-tools-slot.bottom-center .nav-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.nav-tools-slot.bottom-center .nav-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.nav-tools-slot.bottom-center .nav-btn.active {
+  background: #0078d4;
+  color: white;
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+/* Hover / focus / active interactions for the circular buttons */
+.nav-tools-slot.bottom-center .nav-btn {
+  transition:
+    transform 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease,
+    border-color 120ms ease;
+}
+
+.nav-tools-slot.bottom-center .nav-btn:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  background: #f3f9ff;
+  border-color: rgba(0, 120, 212, 0.12);
+}
+
+.nav-tools-slot.bottom-center .nav-btn:active {
+  transform: translateY(-1px) scale(0.98);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nav-tools-slot.bottom-center .nav-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(0, 120, 212, 0.12);
+}
+
+.nav-tools-slot.bottom-center .nav-btn.active {
+  background: #005a9e;
+  color: #fff;
+  border-color: rgba(0, 0, 0, 0.06);
+  transform: translateY(0);
+}
+
 .nav-tools {
   min-width: 150px;
 }
@@ -318,6 +417,7 @@ body {
   margin-top: 6px;
   font-size: 12px;
   color: #555;
+  display: none !important;
 }
 
 /* --- Measure Tools --- */

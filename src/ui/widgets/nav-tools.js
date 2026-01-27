@@ -20,11 +20,28 @@ export class NavTools {
     const container = document.createElement("div");
     container.className = "gis-widget nav-tools";
     container.innerHTML = `
-      <div class="nav-title">Navigation</div>
       <div class="nav-buttons">
-        <button class="nav-btn" data-action="zoom-in">＋</button>
-        <button class="nav-btn" data-action="zoom-out">－</button>
-        <button class="nav-btn" data-action="zoom-window">□</button>
+        <button class="nav-btn" data-action="zoom-in" aria-label="Zoom In">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="6"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <line x1="11" y1="8" x2="11" y2="14"></line>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+          </svg>
+        </button>
+        <button class="nav-btn" data-action="zoom-out" aria-label="Zoom Out">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="6"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+          </svg>
+        </button>
+        <button class="nav-btn" data-action="zoom-window" aria-label="Zoom Window">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="14" height="14" rx="1"></rect>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
         ${this.v3dEngine ? '<button class="nav-btn" data-action="toggle-3d">3D</button>' : ""}
       </div>
       <div class="nav-hint" id="nav-hint" style="display:none;">Drag to zoom</div>

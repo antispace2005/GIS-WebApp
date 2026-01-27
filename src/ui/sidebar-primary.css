@@ -127,12 +127,15 @@
 /* Selection controls styling */
 .select-controls {
   margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 .select-controls .btn-select-toggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 6px;
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: #fff;
@@ -144,6 +147,8 @@
     border-color 150ms ease;
   min-height: 36px;
   width: 100%;
+  min-width: 140px;
+  justify-content: center;
 }
 /* space below select/draw toggles when stacked */
 .select-controls .btn-select-toggle,
@@ -166,6 +171,9 @@
   background: #0e21a0;
   color: #fff;
   border-color: rgba(14, 33, 160, 0.9);
+}
+.select-controls .btn-select-toggle.active {
+  cursor: crosshair;
 }
 .select-controls .btn-select-toggle.active .icon-select {
   stroke: #fff;

@@ -149,8 +149,18 @@ async function start() {
     });
 
     // Nav toolbar without 3D button (no v3dEngine)
-    // const navTools = new NavTools(map);
-    // navTools.mount();
+    const navTools = new NavTools(map);
+    // create or reuse a container and apply a temporary `centered` modifier
+    let navContainer = document.getElementById("gis-nav-tools");
+    if (!navContainer) {
+      navContainer = document.createElement("div");
+      navContainer.id = "gis-nav-tools";
+      navContainer.className = "nav-tools-slot bottom-center";
+      document.body.appendChild(navContainer);
+    } else {
+      navContainer.classList.add("bottom-center");
+    }
+    navTools.mount(navContainer);
 
     // 3. Initialize Tools Panel (Phase 4)
     const toolsPanel = new ToolsPanel();
